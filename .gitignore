@@ -1,0 +1,17 @@
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+
+# No binaries / dumps in this repo (keep it text-only)
+*.bin
+*.img
+*.elf
+*.mbn
+*.der
+!assets/**
+
+# Local scratch
+/tmp/
+*.local

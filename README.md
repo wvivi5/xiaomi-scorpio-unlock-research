@@ -1,5 +1,7 @@
 # Xiaomi Mi Note 2 (scorpio / MSM8996) Bootloader Unlock Feasibility — Research Notes
 
+*[English version: README.en.md](README.en.md)*
+
 > **状态：终结性负面结论（Terminal negative result）**
 > **结论一句话**：在不持有小米 RSA 私钥、不改动设备熔丝（QFPROM）的前提下，小米 Note 2（scorpio / MSM8996）**不存在任何可解锁、或可引导未签名内核（如 postmarketOS）的结构性通路**。零成本方案在固件层面被完整封死。
 >
@@ -179,20 +181,23 @@ token = base64url( 12B 随机(RNG)  +  6B QFPROM "Serial Number" 熔丝 )
 
 ## Open Leads — 给后来者的接续点
 
-如果你愿意继续，以下是我评估过、但未走完的方向（按可行性排序）：
+方向和进度已转成 Issue（标签 `help wanted`），可直接认领：
 
-1. **`aboot` 内存破坏漏洞（唯一残留理论通路）**
+1. **[Issue #1](https://github.com/wvivi5/xiaomi-scorpio-unlock-research/issues/1) — `aboot` 内存破坏漏洞（唯一残留理论通路）**
    - 起点：`c048` 把 2048-bit（256B）RSA 输出写进 **128B** 栈缓冲（`sub sp,#0x88` + `memset(sp+4,0,0x80)`）。
    - 限制：RSA 输入长度必须 ==256 才进入该路径（24B 短输入直接被拒）；且受**全局栈 canary `0x92b96d34`** 保护。
    - 需要：先找到 canary 泄漏原语 → ROP 置 RAM flag → **但仍需解决持久化**（重启后 `AE0C` 归零）→ 需写入真 token（需私钥）。工程闭环极难。
    - 有利面：无 KASLR（全固定地址），fastboot 攻击面是 2016 年代的代码。
-2. **重新审视 XBL 的 Mi-Token UEFI 协议**：`lrh2000` 提到该协议有**三个函数**，其中一个被忽略。值得看看是否有可滥用点。
-3. **审计其它 fastboot 命令解析器**：找 pre-auth 的内存破坏（越界/整数溢出），不局限于 `oem unlock`。
-4. **QSEE TA（`lksecapp`）验证旁路**：锁定态下 boot/recovery 由 TA 验签。审计 TA 接口契约是否有缺陷。
-5. **硬件层**：QFPROM 熔丝改写（需要 JTAG/熔丝烧录设备）——**非零成本**，故排除在本文范围外。
-6. **换机**：确认了 Note 2 这条路封死后，若目标只是"跑 pmOS 的 10 台设备"，选择**没有此固件缺陷的机型**（例如社区大量成功解锁的老机型）是唯一稳妥的批量方案。
+2. **[Issue #5](https://github.com/wvivi5/xiaomi-scorpio-unlock-research/issues/5) — （最可能打通）是否存在某个「官方」Note 2 `aboot`/ROM 会生成*完整* token？**
+   - 若存在：刷入该**官方签名**的 `aboot`（SBL 会接受，不会 brick）→ `getvar token` 输出完整 token → 服务器可签发，且设备端 `strcmp` 用同一份完整 token → **可能解锁成功**。
+   - 值得系统性对比 Note 2 历代固件包里的 `aboot` token 生成逻辑。
+3. **[Issue #2](https://github.com/wvivi5/xiaomi-scorpio-unlock-research/issues/2) — 重新审视 XBL 的 Mi-Token UEFI 协议**：`lrh2000` 提到该协议有**三个函数**，其中一个被忽略。值得看看是否有可滥用点。
+4. **[Issue #3](https://github.com/wvivi5/xiaomi-scorpio-unlock-research/issues/3) — 审计其它 fastboot 命令解析器**：找 pre-auth 的内存破坏（越界/整数溢出），不局限于 `oem unlock`。
+5. **[Issue #4](https://github.com/wvivi5/xiaomi-scorpio-unlock-research/issues/4) — QSEE TA（`lksecapp`）验证旁路**：锁定态下 boot/recovery 由 TA 验签。审计 TA 接口契约是否有缺陷。
+6. **硬件层**：QFPROM 熔丝改写（需要 JTAG/熔丝烧录设备）——**非零成本**，故排除在本文范围外。
+7. **换机**：确认了 Note 2 这条路封死后，若目标只是"跑 pmOS 的 10 台设备"，选择**没有此固件缺陷的机型**（例如社区大量成功解锁的老机型）是唯一稳妥的批量方案。
 
-如果你在这些方向上取得进展，欢迎开 Issue / PR 补充证据。
+如果你在这些方向上取得进展，欢迎直接在这些 Issue 下留言，或开 PR 补充证据。
 
 ---
 
